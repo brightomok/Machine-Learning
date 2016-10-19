@@ -21,8 +21,6 @@ This is Quiz 1 from the Machine Learning course within the Data Science Speciali
 <hr>
 ##### Explanation:
 
-Self-Explanatory
-
 Self-explanatory
 
 <hr>
