@@ -3,8 +3,8 @@ Ryan Tillis - Machine Learning - Data Science - Quiz 1 - Coursera
 <a href="http://www.ryantillis.com"> Ryan Tillis </a>
 June 3, 2016
 
-Machine Leearning Quiz 1
-------------------------
+Machine Learning Quiz 1
+-----------------------
 
 This is Quiz 1 from the Machine Learning course within the Data Science Specialization. This publication is intended as a learning resource, all answers are documented and explained.
 
