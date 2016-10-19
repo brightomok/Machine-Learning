@@ -14,7 +14,7 @@ This is Quiz 1 from the Machine Learning course within the Data Science Speciali
 <font size="+2">1. </font> Which of the following are components in building a machine learning algorithm?
 
 <hr>
--   <font size="+1">**Training and test sets**
+-   <font size="+1">**Creating features.**
 
 </font>
 
