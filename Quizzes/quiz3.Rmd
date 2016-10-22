@@ -1,0 +1,229 @@
+---
+title: "Ryan Tillis - Machine Learning - Data Science - Quiz 3 - Coursera"
+author: <a href="http://www.ryantillis.com"> Ryan Tillis </a>
+date: "August 14, 2016"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Machine Learning Quiz 3
+
+This is Quiz 3 from the Machine Learning course within the Data Science Specialization. This is intended as a learning resource. Topics include Random Forests, CART, k-fold cross validation, bias and olive oil.
+
+###Questions
+<hr>
+<font size="+2">1.  </font> Load the Alzheimer's disease data using the commands:
+```{r q1}
+library(AppliedPredictiveModeling)
+data(segmentationOriginal)
+library(caret)
+```
+
+1. Subset the data to a training set and testing set based on the Case variable in the data set.
+
+2. Set the seed to 125 and fit a CART model with the rpart method using all predictor variables and default caret settings.
+
+3. In the final model what would be the final model prediction for cases with the following variable values:
+
+a. TotalIntench2 = 23,000; FiberWidthCh1 = 10; PerimStatusCh1=2
+
+b. TotalIntench2 = 50,000; FiberWidthCh1 = 10;VarIntenCh4 = 100
+
+c. TotalIntench2 = 57,000; FiberWidthCh1 = 8;VarIntenCh4 = 100
+
+d. FiberWidthCh1 = 8;VarIntenCh4 = 100; PerimStatusCh1=2
+
+<hr>
+<font size="+1"><b>a. PS
+
+b. WS
+
+c. PS
+
+d. Not possible to predict
+</b>  </font> 
+```{r q1a, eval = FALSE} 
+library(AppliedPredictiveModeling)
+data(segmentationOriginal)
+library(caret)
+```
+</font>
+
+<hr>
+
+#####Explanation:
+
+Split the data by test/train factor then fit to a CART model and evaluated the nodes.
+
+```{r Question 1}
+
+```
+
+<hr>
+
+<font size="+2">2.  </font> If K is small in a K-fold cross validation is the bias in the estimate of out-of-sample (test set) accuracy smaller or bigger? If K is small is the variance in the estimate of out-of-sample (test set) accuracy smaller or bigger. Is K large or small in leave one out cross validation?
+
+```{r q2, message = FALSE}
+library(AppliedPredictiveModeling)
+data(segmentationOriginal)
+library(caret)
+
+set.seed(125)
+trainset <- segmentationOriginal[which(segmentationOriginal$Case == "Train"),]
+testset <- segmentationOriginal[which(segmentationOriginal$Case == "Test"),]
+
+#Fitting the CART model with caret package
+modFit <- train(Class ~., method ="rpart", data=trainset)
+print(modFit$finalModel)
+```
+
+```{r plot, echo = FALSE}
+require(rattle);require(rpart.plot)
+fancyRpartPlot(modFit$finalModel)
+```
+
+<hr>
+
+* <font size="+1">**The bias is larger and the variance is smaller. Under leave one out cross validation K is equal to the sample size.**</font>
+
+<hr>
+
+#####Explanation:
+
+```{r Question 2, echo = FALSE, message=FALSE}
+
+```
+
+<hr>
+
+<font size="+2">3.  </font> Load the olive oil data using the commands:
+
+```{r 3, message = FALSE}
+require(pgmm)
+data(olive)
+olive = olive[,-1]
+```
+
+(NOTE: If you have trouble installing the pgmm package, you can download the -code-olive-/code- dataset here: olive_data.zip. After unzipping the archive, you can load the file using the -code-load()-/code- function in R.)
+
+These data contain information on 572 different Italian olive oils from multiple regions in Italy. Fit a classification tree where Area is the outcome variable. Then predict the value of area for the following data frame using the tree command with all defaults
+
+```{r this}
+newdata = as.data.frame(t(colMeans(olive)))
+```
+
+<hr>
+
+* <font size="+1"> **2.783. It is strange because Area should be a qualitative variable - but tree is reporting the average value of Area as a numeric variable in the leaf predicted for newdata**
+
+</font>
+
+#####Explanation:
+
+<hr>
+```{r Question 3}
+modFit2 <- train(Area ~., method ="rpart", data=olive)
+print(modFit2$finalModel)
+fancyRpartPlot(modFit2$finalModel)
+predict(modFit2,newdata)
+```
+
+<hr>
+
+<font size="+2">4.  </font> 
+Load the South Africa Heart Disease Data and create training and test sets with the following code:
+```{r Question 4e}
+library(ElemStatLearn)
+data(SAheart)
+set.seed(8484)
+train = sample(1:dim(SAheart)[1],size=dim(SAheart)[1]/2,replace=F)
+trainSA = SAheart[train,]
+testSA = SAheart[-train,]
+```
+
+Then set the seed to 13234 and fit a logistic regression model (method="glm", be sure to specify family="binomial") with Coronary Heart Disease (chd) as the outcome and age at onset, current alcohol consumption, obesity levels, cumulative tabacco, type-A behavior, and low density lipoprotein cholesterol as predictors. Calculate the misclassification rate for your model using this function and a prediction on the "response" scale:
+
+<hr>
+
+* <font size="+1">**Test Set Misclassification: 0.31
+
+Training Set: 0.27**
+</font>
+
+<hr>
+
+#####Explanation:
+
+
+```{r Question 4ea}
+set.seed(13234)
+head(trainSA)
+
+#Fitting the Binomial model
+modFit3 <- train(chd ~age + alcohol + obesity + tobacco + typea + ldl, method ="glm", family = "binomial", data=trainSA)
+
+#Missclassification function
+missClass = function(values,prediction){sum(((prediction > 0.5)*1) != values)/length(values)}
+
+#Predicting against test and training sets
+predTest <- predict(modFit3,testSA)
+predTrain <- predict(modFit3,trainSA)
+
+tabletest <- table(predTest>0.5, testSA$chd)
+tabletrain <- table(predTrain>0.5,testSA$chd)
+
+#Misclassification for each model and tables
+missClass(testSA$chd, predTest)
+missClass(trainSA$chd,predTrain)
+tabletest
+tabletrain
+```
+
+<hr>
+
+<font size="+2">5.  </font> Load the vowel.train and vowel.test data sets:
+
+```{r Question 4aeat}
+library(ElemStatLearn)
+data(vowel.train)
+data(vowel.test)
+```
+
+Set the variable y to be a factor variable in both the training and test set. Then set the seed to 33833. Fit a random forest predictor relating the factor variable y to the remaining variables. Read about variable importance in random forests here: http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr The caret package uses by default the Gini importance.
+
+Calculate the variable importance using the varImp function in the caret package. What is the order of variable importance?
+
+<hr>
+
+* <font size="+1"> **The order of the variables is:
+
+x.2, x.1, x.5, x.6, x.8, x.4, x.9, x.3, x.7,x.10**
+**PCA Accuracy: 0.72** </font>
+
+<hr>
+
+#####Explanation:
+
+Results aren't exactly the same as the quiz but the algorithm for random forest has changed in the caret package since the quiz was made. At least the first 5 most important variables are the same.
+
+```{r Question 5}
+set.seed(33833)
+
+test <- vowel.test
+test$y <- factor(test$y)
+train <- vowel.train
+train$y <- factor(train$y)
+
+modfit4 <- train(y ~., method = "rf", data = train)
+varImp(modfit4)
+
+```
+
+<hr>
+
+Check out my website at: <http://www.ryantillis.com/>
+
+<hr>

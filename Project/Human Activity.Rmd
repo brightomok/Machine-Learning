@@ -1,0 +1,30 @@
+---
+title: "Maching Learning Project"
+author: "Ryan Tillis"
+date: "October 21, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Human Activity Recognition Project
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. The goal is to predict the manner the barbell lift was performed using the data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. Data for this project comes from <http://groupware.les.inf.puc-rio.br/har>
+
+###Building the Model
+
+```{r cars}
+summary(cars)
+```
+
+## Cross Validation
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+###Expected Sample Error

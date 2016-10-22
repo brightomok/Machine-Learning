@@ -1,0 +1,7 @@
+name: Publish Document
+account: rpubs
+server: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/220100/ab422041135a4cd09eab58ff3da60472
+bundleId: https://api.rpubs.com/api/v1/document/220100/ab422041135a4cd09eab58ff3da60472
+url: http://rpubs.com/ryantillis/220100
+when: 1476920329.28517
