@@ -171,6 +171,19 @@ set.seed(62433)
 rf <- train(diagnosis~., method = "rf",data =training)
 ```
 
+    ## Loading required package: randomForest
+
+    ## randomForest 4.6-12
+
+    ## Type rfNews() to see new features/changes/bug fixes.
+
+    ## 
+    ## Attaching package: 'randomForest'
+
+    ## The following object is masked from 'package:ggplot2':
+    ## 
+    ##     margin
+
 ``` r
 lda <- train(diagnosis~., method = "lda",data =training)
 ```
@@ -185,6 +198,18 @@ lda <- train(diagnosis~., method = "lda",data =training)
 #Predicting the Model
 pred_rf <- predict(rf, testing)
 pred_boost <- predict(boost, testing)
+```
+
+    ## Loading required package: plyr
+
+    ## 
+    ## Attaching package: 'plyr'
+
+    ## The following object is masked from 'package:ElemStatLearn':
+    ## 
+    ##     ozone
+
+``` r
 pred_lda <- predict(lda, testing)
 
 #Combining Prediction Sets, training against diagnosis and predicting 

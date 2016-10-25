@@ -1,0 +1,197 @@
+---
+title: "Maching Learning Project - Random Forest - Sensor Data"
+author: <a href="http://www.ryantillis.com"> Ryan Tillis </a>
+date: "September 4, 2016"
+output: github_document
+bibliography: ArtigoSBIA_2012.enl
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(caret);library(rpart);library(rattle);library(FSelector);library(randomForest)
+```
+
+## Human Activity Recognition
+
+With today's sensor technology phones can teach us to salsa and watches can teach us how to eat salsa. As you might expect, applications of motion sensing data is not only limited to salsa-related activities.
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. The goal of this project is to predict how well a bicep curl was performed using the data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. Data for this project comes from <http://groupware.les.inf.puc-rio.br/har>
+
+Six participants performed 10 bicep curls in five different fashions: exactly according to the correct specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).
+
+
+###Data Processing
+The data appears at first to have a lot of NA values. The data is provided with aggregated statistical metrics across each window of observation. The columns that contain these aggregated values are assigned NA while the data is collected. For this analysis I chose to separate the aggregated data and the raw data into 2 data frames and build models off of both. The section of code below includes creating a training/testing partition and separating the aggregated data columns from the raw data and finally the removal of the NA values from the summarized data.
+
+```{r Data Processing, cache = TRUE}
+#Setting seed for reproducibility
+set.seed(22)
+
+#Download the data
+download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", destfile = "training.csv")
+
+download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", destfile = "testing.csv")
+
+#Full data for partitioning
+data <- read.csv("training.csv")
+
+#20 Cases for Validation
+validation <- read.csv("testing.csv")
+
+class(data$classe)
+
+levels(data$classe)
+
+dim(data)
+
+#Identifying NA level
+NA_levels <- unique(apply(data, 2,function(x){sum(is.na(x))}))
+number_NA <- dim(data)[1]-NA_levels[2]
+non_NA <- number_NA/dim(data)[1]
+sprintf("%1.2f%%", 100*non_NA)
+
+#Setting empty spaces and div0 to be NA
+data[data == ""] <- NA
+data[data=="#DIV/0!"] <- NA
+data[data=="<NA>"] <- NA
+
+#Splitting the data for test/train
+set.seed(22)
+traindex <- createDataPartition(data$classe,p = 0.8,list = FALSE)
+train <- data[traindex,]
+test <- data[-traindex,]
+
+#Selecting non-aggregated RAW sensor data
+train_raw <- train[which(train$new_window == "no"),]
+
+#Raw sensor data without NA columns(summary data)
+train_raw <- train[!colSums(is.na(train)) > 0]
+
+#Testing NA purity
+sum(is.na(train_raw))
+
+#Splitting data to new window rows (aggregated data)
+train_sum <- train[which(train$new_window == "yes"),]
+test_sum <- test[which(test$new_window == "yes"),]
+
+#Removing full NA columns
+train_sum_clean <- subset(train_sum,
+                          select=-c(kurtosis_picth_belt,kurtosis_yaw_belt,kurtosis_picth_arm,kurtosis_yaw_arm,skewness_pitch_arm,kurtosis_yaw_dumbbell,skewness_yaw_dumbbell,skewness_yaw_forearm,kurtosis_yaw_forearm,skewness_yaw_belt,skewness_roll_belt.1))
+
+test_sum_clean <- subset(test_sum,
+                          select=-c(kurtosis_picth_belt,kurtosis_yaw_belt,kurtosis_picth_arm,kurtosis_yaw_arm,skewness_pitch_arm,kurtosis_yaw_dumbbell,skewness_yaw_dumbbell,skewness_yaw_forearm,kurtosis_yaw_forearm,skewness_yaw_belt,skewness_roll_belt.1))
+
+#Removing NA rows
+train_done <- train_sum_clean[complete.cases(train_sum_clean),]
+sum(is.na(train_done))
+
+test_done <- test_sum_clean[complete.cases(test_sum_clean),]
+sum(is.na(test_done))
+```
+
+###Model Fitting
+
+Due to the charactertics of the noise in the sensor data, a random forest model is best for this task. The first model (model1) achieves an estimated out of sample **error rate of 0.43%.** The model uses bootstrap resampling with the training set partition given above to crossvalidate against the test set. Since the fit uses all the possible (59) clean predictor variables, k-fold cross validation would be computationally intensive.
+```{R Model 1, cache = TRUE}
+#Important to not include the X row in the dataset because it is an index and the data is organized alphabetically by class outcome.
+model1 <- randomForest(classe ~. , data=train_raw[,-c(1:7)], method="class")
+pred_test1 <- predict(model1, test)
+pred_train1 <- predict(model1, train)
+
+confusionMatrix(pred_test1, test$classe)
+confusionMatrix(pred_train1, train$classe)
+```
+
+The second model (model2) uses feature selection to narrow down the 59 predictors to only 7 chosen Variables: classe ~ roll_belt + pitch_belt + yaw_belt + magnet_arm_x + gyros_dumbbell_y + magnet_dumbbell_y + pitch_forearm. This model achieves a 98.16% accuracy with an **expected error of 1.81%.** The expected error is higher, but is still very successful considering this model uses 52 fewer predictors. To create this model, 3-fold crossvalidation was implemented with the caret package.
+
+```{r Model 2, cache = TRUE}
+#Using Correlation based feature selection and best-first algorithm
+features <- cfs(classe~.,train_raw[,-c(1:7)])
+f <- as.simple.formula(features, "classe")
+
+fitControl <- trainControl(## 10-fold CV
+                           method = "cv",
+                           number = 3,
+                           ## repeated ten times
+                           repeats = 3)
+
+model2 <- train(f, method = "rf", data =train_raw, trControl = fitControl)
+
+model2
+
+pred_test2 <- predict(model2, test)
+pred_train2 <- predict(model2, train)
+
+confusionMatrix(pred_test2, test$classe)
+confusionMatrix(pred_train2, train$classe)
+```
+
+The final model (model3) is fit using the provided summary data. This model achieves an accuracy of only 71.74%, or a **28.26% expected error** rate against the test validation set. To create this model 3-fold crossvalidation was implemented with the caret package.
+
+```{R Model 3, cache = TRUE}
+#Predicting off of summary statistics
+features3 <- cfs(classe~.,train_done[,-c(1:7)])
+z <- as.simple.formula(features3, "classe")
+
+model3 <- train(z, method = "rf", data =train_done, trControl = fitControl)
+
+model3
+
+pred_test3 <- predict(model3, test_done)
+pred_train3 <- predict(model3, train_done)
+
+confusionMatrix(pred_test3, test_done$classe)
+confusionMatrix(pred_train3, train_done$classe)
+```
+
+
+## Conclusions
+
+Predicting off of the summary statistics is much less accurate.  The most differentiating variable is the pitch of the belt sensor. This quickly distinguishes a lot of cases where the individual performs a Class E mistake ("throwing the hips to the front"). The first model performed the best overall, and will be used to predict the validation set.
+
+```{R Validation}
+predict(model1,validation)
+```
+
+
+## Appendix
+
+```{r pressure, echo=FALSE}
+model1
+model2
+model3
+```
+---
+references:
+- id: fenner2012a
+  title: One-click science marketing
+  author:
+  - family: Fenner
+    given: Martin
+  container-title: Nature Materials
+  volume: 11
+  URL: 'http://dx.doi.org/10.1038/nmat3283'
+  DOI: 10.1038/nmat3283
+  issue: 4
+  publisher: Nature Publishing Group
+  page: 261-263
+  type: article-journal
+  issued:
+    year: 2012
+    month: 3
+---
+
+
+Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6. 
+Cited by 2 (Google Scholar)
+
+L. B. Statistics and L. Breiman. Random forests. In Machine Learning, pages 5–32, 2001.
+
+Read more: http://groupware.les.inf.puc-rio.br/har#sbia_paper_section#ixzz4NpZpLz5s
+
+<hr>
+
+Check out my website at: <http://www.ryantillis.com/>
+
+<hr>
+
