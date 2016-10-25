@@ -2,7 +2,7 @@
 title: "Maching Learning Project - Random Forest - Sensor Data"
 author: <a href="http://www.ryantillis.com"> Ryan Tillis </a>
 date: "September 4, 2016"
-output: github_document
+output: html_document
 bibliography: ArtigoSBIA_2012.enl
 ---
 
